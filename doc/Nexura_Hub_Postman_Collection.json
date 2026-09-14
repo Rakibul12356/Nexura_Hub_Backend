@@ -1,0 +1,404 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-5678-90ef-1234-567890abcdef",
+		"name": "Nexura Hub API Collection",
+		"description": "Production-ready Postman collection for Nexura Hub Golang + Supabase PostgreSQL Backend API.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"NexuraHubAdmin@gmail.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login Student",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"student@nexurahub.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login Instructor",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"instructor@nexurahub.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Karim\",\n  \"lastName\": \"Rahman\",\n  \"email\": \"karim@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"student\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Get Profile (Me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "me"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Public Course Catalog",
+			"item": [
+				{
+					"name": "Get All Courses",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/courses?page=1&limit=10&search=&category=",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "courses"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" },
+								{ "key": "search", "value": "" },
+								{ "key": "category", "value": "" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Categories",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/courses/categories",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "courses", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Get Course By Slug",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/courses/reactive-accelerator",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "courses", "reactive-accelerator"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Student Actions",
+			"item": [
+				{
+					"name": "Enroll In Course",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"paymentMethod\": \"bkash\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/courses/{{course_id}}/enroll",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "courses", "{{course_id}}", "enroll"]
+						}
+					}
+				},
+				{
+					"name": "Get My Enrollments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/courses/enrolled",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "courses", "enrolled"]
+						}
+					}
+				},
+				{
+					"name": "Complete Lesson",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/lessons/{{lesson_id}}/complete",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "lessons", "{{lesson_id}}", "complete"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Instructor Studio",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{instructor_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/instructor/dashboard/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "instructor", "dashboard", "stats"]
+						}
+					}
+				},
+				{
+					"name": "Create Course",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{instructor_token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Fullstack Go & React Enterprise Masterclass\",\n  \"subtitle\": \"Build high performance clean architecture backends\",\n  \"description\": \"Learn clean architecture in Go with React frontend.\",\n  \"category\": \"Software Engineering\",\n  \"price\": 5000.00,\n  \"discountPrice\": 4200.00,\n  \"thumbnail\": \"https://images.unsplash.com/photo-1633356122544-f134324a6cee\",\n  \"learningPoints\": [\n    \"Master Go Clean Architecture\",\n    \"PostgreSQL transaction cut logic\",\n    \"WebSocket Room Management\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/instructor/courses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "instructor", "courses"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Control",
+			"item": [
+				{
+					"name": "Get Admin Overview",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/overview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "overview"]
+						}
+					}
+				},
+				{
+					"name": "Approve Course",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/courses/{{course_id}}/approve",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "courses", "{{course_id}}", "approve"]
+						}
+					}
+				},
+				{
+					"name": "Update User Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"suspended\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users/{{user_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "users", "{{user_id}}", "status"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Real-time Chat",
+			"item": [
+				{
+					"name": "Get My Conversations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/conversations",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "conversations"]
+						}
+					}
+				},
+				{
+					"name": "Get Conversation Messages (Cursor)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages?limit=20&cursor=",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "conversations", "{{conversation_id}}", "messages"],
+							"query": [
+								{ "key": "limit", "value": "20" },
+								{ "key": "cursor", "value": "" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"conversationId\": \"{{conversation_id}}\",\n  \"content\": \"Hello everyone! Welcome to Nexura Hub.\",\n  \"imageUrl\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/conversations/messages",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "conversations", "messages"]
+						}
+					}
+				},
+				{
+					"name": "Send Reaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"conversationId\": \"{{conversation_id}}\",\n  \"messageId\": \"{{message_id}}\",\n  \"emoji\": \"❤️\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/conversations/reactions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "conversations", "reactions"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		},
+		{
+			"key": "student_token",
+			"value": ""
+		},
+		{
+			"key": "instructor_token",
+			"value": ""
+		},
+		{
+			"key": "course_id",
+			"value": "512bc9cd-54a6-457b-b4d6-8833cf93dc6c"
+		},
+		{
+			"key": "conversation_id",
+			"value": ""
+		},
+		{
+			"key": "message_id",
+			"value": ""
+		},
+		{
+			"key": "lesson_id",
+			"value": ""
+		},
+		{
+			"key": "user_id",
+			"value": ""
+		}
+	]
+}
