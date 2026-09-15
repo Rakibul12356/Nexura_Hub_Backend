@@ -132,17 +132,17 @@ func SetupServer(cfg ServerConfig) *gin.Engine {
 		{
 			lessonsGroup.PUT("/:id", cfg.CourseHandler.UpdateLesson)
 			lessonsGroup.DELETE("/:id", cfg.CourseHandler.DeleteLesson)
-			lessonsGroup.POST("/:lessonId/complete", cfg.EnrollmentHandler.CompleteLesson)
+			lessonsGroup.POST("/:id/complete", cfg.EnrollmentHandler.CompleteLesson)
 		}
 
 		// 5. User Enrollments & Progress
 		studentGroup := api.Group("")
 		studentGroup.Use(middleware.JWTAuthMiddleware(cfg.JWTService))
 		{
-			studentGroup.POST("/courses/:courseId/enroll", cfg.EnrollmentHandler.EnrollCourse)
+			studentGroup.POST("/courses/:id/enroll", cfg.EnrollmentHandler.EnrollCourse)
 			studentGroup.GET("/courses/enrolled", cfg.EnrollmentHandler.GetMyEnrollments)
 			studentGroup.GET("/user/enrolled-courses", cfg.EnrollmentHandler.GetMyEnrollments)
-			studentGroup.GET("/enrollments/:courseId/status", cfg.EnrollmentHandler.GetEnrollmentStatus)
+			studentGroup.GET("/enrollments/:id/status", cfg.EnrollmentHandler.GetEnrollmentStatus)
 		}
 
 		// 6. Media Upload Group

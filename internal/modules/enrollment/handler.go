@@ -22,7 +22,10 @@ func (h *EnrollmentHandler) EnrollCourse(c *gin.Context) {
 	studentIDVal, _ := c.Get("userID")
 	studentID := studentIDVal.(uuid.UUID)
 
-	courseIDStr := c.Param("courseId")
+	courseIDStr := c.Param("id")
+	if courseIDStr == "" {
+		courseIDStr = c.Param("courseId")
+	}
 	courseID, err := uuid.Parse(courseIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid course ID"})
@@ -76,7 +79,10 @@ func (h *EnrollmentHandler) CompleteLesson(c *gin.Context) {
 	studentIDVal, _ := c.Get("userID")
 	studentID := studentIDVal.(uuid.UUID)
 
-	lessonIDStr := c.Param("lessonId")
+	lessonIDStr := c.Param("id")
+	if lessonIDStr == "" {
+		lessonIDStr = c.Param("lessonId")
+	}
 	lessonID, err := uuid.Parse(lessonIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid lesson ID"})
@@ -101,7 +107,10 @@ func (h *EnrollmentHandler) GetEnrollmentStatus(c *gin.Context) {
 		return
 	}
 	studentID := studentIDVal.(uuid.UUID)
-	courseIDStr := c.Param("courseId")
+	courseIDStr := c.Param("id")
+	if courseIDStr == "" {
+		courseIDStr = c.Param("courseId")
+	}
 	courseID, err := uuid.Parse(courseIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid course ID"})
