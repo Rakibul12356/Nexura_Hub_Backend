@@ -13,6 +13,7 @@ import (
 	"nexura-backend/internal/modules/course"
 	"nexura-backend/internal/modules/enrollment"
 	"nexura-backend/internal/modules/instructor"
+	"nexura-backend/internal/modules/upload"
 	"nexura-backend/pkg/database"
 	"nexura-backend/pkg/jwt"
 )
@@ -55,6 +56,7 @@ func main() {
 	instructorHandler := instructor.NewInstructorHandler(instructorUsecase)
 	adminHandler := admin.NewAdminHandler(adminUsecase)
 	chatHandler := chat.NewChatHandler(chatUsecase)
+	uploadHandler := upload.NewUploadHandler()
 
 	// WebSocket Hub & Handler
 	wsHub := chat.NewHub()
@@ -73,6 +75,7 @@ func main() {
 		AdminHandler:      adminHandler,
 		ChatHandler:       chatHandler,
 		WSHandler:         wsHandler,
+		UploadHandler:     uploadHandler,
 	})
 
 	log.Printf("[Nexura Hub] Server listening on http://localhost:%s", cfg.Port)

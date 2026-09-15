@@ -58,3 +58,31 @@ type AuthResponse struct {
 	Token string `json:"token"`
 	User  *User  `json:"user"`
 }
+
+type UpdateProfileDTO struct {
+	FirstName  *string `json:"firstName"`
+	LastName   *string `json:"lastName"`
+	Bio        *string `json:"bio"`
+	Occupation *string `json:"occupation"`
+	Phone      *string `json:"phone"`
+	Website    *string `json:"website"`
+	Avatar     *string `json:"avatar"`
+}
+
+type ChangePasswordDTO struct {
+	CurrentPassword string `json:"currentPassword" binding:"required"`
+	NewPassword     string `json:"newPassword" binding:"required,min=6"`
+}
+
+type RefreshTokenDTO struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
+type ForgotPasswordDTO struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type ResetPasswordDTO struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"newPassword" binding:"required,min=6"`
+}

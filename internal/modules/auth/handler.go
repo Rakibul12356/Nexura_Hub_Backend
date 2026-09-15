@@ -96,3 +96,110 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		"data":   user,
 	})
 }
+
+func (h *AuthHandler) UpdateProfile(c *gin.Context) {
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": "Unauthorized"})
+		return
+	}
+	userID := userIDVal.(uuid.UUID)
+
+	var dto UpdateProfileDTO
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	user, err := h.authUsecase.UpdateProfile(c.Request.Context(), userID, dto)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Profile updated successfully",
+		"data":    user,
+	})
+}
+
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": "Unauthorized"})
+		return
+	}
+	userID := userIDVal.(uuid.UUID)
+
+	var dto ChangePasswordDTO
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	if err := h.authUsecase.ChangePassword(c.Request.Context(), userID, dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Password changed successfully",
+	})
+}
+
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	var dto RefreshTokenDTO
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	res, err := h.authUsecase.RefreshToken(c.Request.Context(), dto.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": "Invalid refresh token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   res,
+	})
+}
+
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var dto ForgotPasswordDTO
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	if err := h.authUsecase.ForgotPassword(c.Request.Context(), dto.Email); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Password reset instructions sent to email",
+	})
+}
+
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var dto ResetPasswordDTO
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	if err := h.authUsecase.ResetPassword(c.Request.Context(), dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Password reset successfully",
+	})
+}

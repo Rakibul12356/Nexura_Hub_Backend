@@ -93,3 +93,39 @@ func (h *EnrollmentHandler) CompleteLesson(c *gin.Context) {
 		"message": "Lesson marked as completed",
 	})
 }
+
+func (h *EnrollmentHandler) GetEnrollmentStatus(c *gin.Context) {
+	studentIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": "Unauthorized"})
+		return
+	}
+	studentID := studentIDVal.(uuid.UUID)
+	courseIDStr := c.Param("courseId")
+	courseID, err := uuid.Parse(courseIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid course ID"})
+		return
+	}
+	enrollments, err := h.enrollmentUsecase.GetStudentEnrollments(c.Request.Context(), studentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	isEnrolled := false
+	var found interface{}
+	for _, e := range enrollments {
+		if e.CourseID == courseID {
+			isEnrolled = true
+			found = e
+			break
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"isEnrolled": isEnrolled,
+			"details":    found,
+		},
+	})
+}

@@ -87,3 +87,76 @@ func (h *AdminHandler) UpdateUserStatus(c *gin.Context) {
 		"data":    gin.H{"userId": userID, "status": req.Status},
 	})
 }
+
+func (h *AdminHandler) GetRevenueAnalytics(c *gin.Context) {
+	data, err := h.adminUsecase.GetRevenueAnalytics(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": data})
+}
+
+func (h *AdminHandler) ListUsers(c *gin.Context) {
+	role := c.Query("role")
+	users, err := h.adminUsecase.ListUsers(c.Request.Context(), role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": users})
+}
+
+func (h *AdminHandler) GetUserByID(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid user ID"})
+		return
+	}
+	user, err := h.adminUsecase.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": user})
+}
+
+func (h *AdminHandler) UpdateUserRole(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid user ID"})
+		return
+	}
+	var req struct {
+		Role auth.UserRole `json:"role" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	if err := h.adminUsecase.UpdateUserRole(c.Request.Context(), userID, req.Role); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "User role updated successfully",
+		"data":    gin.H{"userId": userID, "role": req.Role},
+	})
+}
+
+func (h *AdminHandler) DeleteUser(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid user ID"})
+		return
+	}
+	if err := h.adminUsecase.DeleteUser(c.Request.Context(), userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "User suspended/deleted successfully"})
+}

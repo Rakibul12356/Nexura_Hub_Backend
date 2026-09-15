@@ -14,6 +14,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
+	Update(ctx context.Context, user *User) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status UserStatus) error
 	CountByRole(ctx context.Context, role UserRole) (int, error)
 }
@@ -83,6 +84,30 @@ func (r *postgresUserRepository) GetByEmail(ctx context.Context, email string) (
 		return nil, err
 	}
 	return &u, nil
+}
+
+func (r *postgresUserRepository) Update(ctx context.Context, user *User) error {
+	query := `
+		UPDATE users
+		SET first_name = $1, last_name = $2, password_hash = $3, role = $4, status = $5, avatar = $6, bio = $7, occupation = $8, phone = $9, website = $10, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $11 AND deleted_at IS NULL
+	`
+	res, err := r.db.ExecContext(
+		ctx, query,
+		user.FirstName, user.LastName, user.PasswordHash, user.Role, user.Status,
+		user.Avatar, user.Bio, user.Occupation, user.Phone, user.Website, user.ID,
+	)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return appErrors.ErrUserNotFound
+	}
+	return nil
 }
 
 func (r *postgresUserRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status UserStatus) error {

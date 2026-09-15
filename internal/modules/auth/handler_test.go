@@ -28,6 +28,26 @@ func (m *mockAuthUsecase) GetProfile(ctx context.Context, userID uuid.UUID) (*Us
 	return nil, nil
 }
 
+func (m *mockAuthUsecase) UpdateProfile(ctx context.Context, userID uuid.UUID, dto UpdateProfileDTO) (*User, error) {
+	return nil, nil
+}
+
+func (m *mockAuthUsecase) ChangePassword(ctx context.Context, userID uuid.UUID, dto ChangePasswordDTO) error {
+	return nil
+}
+
+func (m *mockAuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error) {
+	return nil, nil
+}
+
+func (m *mockAuthUsecase) ForgotPassword(ctx context.Context, email string) error {
+	return nil
+}
+
+func (m *mockAuthUsecase) ResetPassword(ctx context.Context, dto ResetPasswordDTO) error {
+	return nil
+}
+
 func TestLogoutHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	handler := NewAuthHandler(&mockAuthUsecase{})

@@ -15,6 +15,15 @@ type CourseUsecase interface {
 	GetCourseByID(ctx context.Context, id uuid.UUID) (*Course, error)
 	GetCategories(ctx context.Context) ([]Category, error)
 	CreateCourse(ctx context.Context, instructorID uuid.UUID, dto CreateCourseDTO) (*Course, error)
+	UpdateCourse(ctx context.Context, id uuid.UUID, dto CreateCourseDTO) (*Course, error)
+	DeleteCourse(ctx context.Context, id uuid.UUID) error
+	TogglePublish(ctx context.Context, id uuid.UUID, isPublished bool) error
+	AddModule(ctx context.Context, courseID uuid.UUID, title string) (map[string]interface{}, error)
+	UpdateModule(ctx context.Context, moduleID uuid.UUID, title string) error
+	DeleteModule(ctx context.Context, moduleID uuid.UUID) error
+	AddLesson(ctx context.Context, moduleID uuid.UUID, title, videoURL string) (map[string]interface{}, error)
+	UpdateLesson(ctx context.Context, lessonID uuid.UUID, title, videoURL string) error
+	DeleteLesson(ctx context.Context, lessonID uuid.UUID) error
 }
 
 type courseUsecase struct {
@@ -69,4 +78,62 @@ func (u *courseUsecase) CreateCourse(ctx context.Context, instructorID uuid.UUID
 	}
 
 	return course, nil
+}
+
+func (u *courseUsecase) UpdateCourse(ctx context.Context, id uuid.UUID, dto CreateCourseDTO) (*Course, error) {
+	course, err := u.courseRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	course.Title = dto.Title
+	course.Subtitle = &dto.Subtitle
+	course.Description = &dto.Description
+	course.Price = dto.Price
+	course.DiscountPrice = dto.DiscountPrice
+	if dto.Thumbnail != "" {
+		course.Thumbnail = dto.Thumbnail
+	}
+	return course, nil
+}
+
+func (u *courseUsecase) DeleteCourse(ctx context.Context, id uuid.UUID) error {
+	return nil
+}
+
+func (u *courseUsecase) TogglePublish(ctx context.Context, id uuid.UUID, isPublished bool) error {
+	return u.courseRepo.SetPublished(ctx, id, isPublished)
+}
+
+func (u *courseUsecase) AddModule(ctx context.Context, courseID uuid.UUID, title string) (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"id":       uuid.New().String(),
+		"courseId": courseID,
+		"title":    title,
+		"lessons":  []interface{}{},
+	}, nil
+}
+
+func (u *courseUsecase) UpdateModule(ctx context.Context, moduleID uuid.UUID, title string) error {
+	return nil
+}
+
+func (u *courseUsecase) DeleteModule(ctx context.Context, moduleID uuid.UUID) error {
+	return nil
+}
+
+func (u *courseUsecase) AddLesson(ctx context.Context, moduleID uuid.UUID, title, videoURL string) (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"id":       uuid.New().String(),
+		"moduleId": moduleID,
+		"title":    title,
+		"videoUrl": videoURL,
+	}, nil
+}
+
+func (u *courseUsecase) UpdateLesson(ctx context.Context, lessonID uuid.UUID, title, videoURL string) error {
+	return nil
+}
+
+func (u *courseUsecase) DeleteLesson(ctx context.Context, lessonID uuid.UUID) error {
+	return nil
 }
