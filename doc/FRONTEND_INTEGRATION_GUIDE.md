@@ -153,6 +153,22 @@ Content-Type: application/json
 
 ---
 
+### 2.4 Logout User
+- **HTTP Method:** `POST`
+- **Path:** `/api/v1/auth/logout`
+- **Auth Required:** Optional (`Bearer <TOKEN>`)
+
+#### Success Response (`200 OK`):
+```json
+{
+  "success": true,
+  "status": "success",
+  "message": "Logged out successfully"
+}
+```
+
+---
+
 ## 3. Public Course Catalog Endpoints
 
 ### 3.1 Fetch Published Course Feed (Paginated + Filters)

@@ -14,6 +14,7 @@ import (
 type AuthUsecase interface {
 	Register(ctx context.Context, dto RegisterDTO) (*AuthResponse, error)
 	Login(ctx context.Context, dto LoginDTO) (*AuthResponse, error)
+	Logout(ctx context.Context) error
 	GetProfile(ctx context.Context, userID uuid.UUID) (*User, error)
 }
 
@@ -95,6 +96,10 @@ func (u *authUsecase) Login(ctx context.Context, dto LoginDTO) (*AuthResponse, e
 		Token: token,
 		User:  user,
 	}, nil
+}
+
+func (u *authUsecase) Logout(ctx context.Context) error {
+	return nil
 }
 
 func (u *authUsecase) GetProfile(ctx context.Context, userID uuid.UUID) (*User, error) {

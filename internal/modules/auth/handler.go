@@ -68,6 +68,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+func (h *AuthHandler) Logout(c *gin.Context) {
+	_ = h.authUsecase.Logout(c.Request.Context())
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"status":  "success",
+		"message": "Logged out successfully",
+	})
+}
+
 func (h *AuthHandler) GetMe(c *gin.Context) {
 	userIDVal, exists := c.Get("userID")
 	if !exists {

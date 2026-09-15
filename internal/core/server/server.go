@@ -40,6 +40,7 @@ func SetupServer(cfg ServerConfig) *gin.Engine {
 		{
 			authGroup.POST("/register", cfg.AuthHandler.Register)
 			authGroup.POST("/login", cfg.AuthHandler.Login)
+			authGroup.POST("/logout", cfg.AuthHandler.Logout)
 			authGroup.GET("/me", middleware.JWTAuthMiddleware(cfg.JWTService), cfg.AuthHandler.GetMe)
 		}
 
