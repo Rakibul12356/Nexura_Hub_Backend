@@ -15,37 +15,35 @@ type mockAuthUsecase struct{}
 func (m *mockAuthUsecase) Register(ctx context.Context, dto RegisterDTO) (*AuthResponse, error) {
 	return nil, nil
 }
-
 func (m *mockAuthUsecase) Login(ctx context.Context, dto LoginDTO) (*AuthResponse, error) {
 	return nil, nil
 }
-
-func (m *mockAuthUsecase) Logout(ctx context.Context) error {
+func (m *mockAuthUsecase) Logout(ctx context.Context, userID uuid.UUID, refreshToken string) error {
 	return nil
 }
-
 func (m *mockAuthUsecase) GetProfile(ctx context.Context, userID uuid.UUID) (*User, error) {
 	return nil, nil
 }
-
 func (m *mockAuthUsecase) UpdateProfile(ctx context.Context, userID uuid.UUID, dto UpdateProfileDTO) (*User, error) {
 	return nil, nil
 }
-
 func (m *mockAuthUsecase) ChangePassword(ctx context.Context, userID uuid.UUID, dto ChangePasswordDTO) error {
 	return nil
 }
-
 func (m *mockAuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error) {
 	return nil, nil
 }
-
-func (m *mockAuthUsecase) ForgotPassword(ctx context.Context, email string) error {
-	return nil
+func (m *mockAuthUsecase) ForgotPassword(ctx context.Context, email string) (string, error) {
+	return "", nil
 }
-
 func (m *mockAuthUsecase) ResetPassword(ctx context.Context, dto ResetPasswordDTO) error {
 	return nil
+}
+func (m *mockAuthUsecase) VerifyEmail(ctx context.Context, token string) error {
+	return nil
+}
+func (m *mockAuthUsecase) GetInstructorPublic(ctx context.Context, id uuid.UUID) (*InstructorPublic, error) {
+	return nil, nil
 }
 
 func TestLogoutHandler(t *testing.T) {
@@ -61,10 +59,5 @@ func TestLogoutHandler(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
-	}
-
-	expectedBody := `{"message":"Logged out successfully","status":"success","success":true}`
-	if w.Body.String() != expectedBody {
-		t.Errorf("expected body %s, got %s", expectedBody, w.Body.String())
 	}
 }

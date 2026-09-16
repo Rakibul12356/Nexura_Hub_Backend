@@ -1,4 +1,3 @@
-// internal/core/errors/errors.go
 package errors
 
 import "errors"
@@ -14,6 +13,25 @@ var (
 	ErrCourseNotFound        = errors.New("course not found or not available")
 	ErrCourseNotPublished    = errors.New("course is not published")
 	ErrAlreadyEnrolled       = errors.New("student is already enrolled in this course")
-	ErrConversationNotFound = errors.New("chat conversation not found")
+	ErrNotEnrolled           = errors.New("you are not enrolled in this course")
+	ErrConversationNotFound  = errors.New("chat conversation not found")
+	ErrMessageNotFound       = errors.New("message not found")
+	ErrCouponInvalid         = errors.New("Invalid promo coupon code.")
+	ErrPaymentNotFound       = errors.New("payment not found")
+	ErrQuizNotFound          = errors.New("quiz set not found")
+	ErrLiveNotFound          = errors.New("live class not found")
+	ErrCertificateNotFound   = errors.New("certificate not found")
+	ErrCertificateNotReady   = errors.New("complete all published lessons and required quizzes before issuing a certificate")
+	ErrCategoryNotFound      = errors.New("category not found")
+	ErrModuleNotFound        = errors.New("module not found")
+	ErrLessonNotFound        = errors.New("lesson not found")
+	ErrReviewNotFound        = errors.New("review not found")
+	ErrFreeEnrollOnly        = errors.New("paid courses must be enrolled via dummy payment")
+	ErrInvalidRole           = errors.New("admin cannot self-register")
+	ErrLastAdmin             = errors.New("cannot remove or demote the last admin")
+	ErrCannotDeleteSelf      = errors.New("cannot delete your own admin account")
 	ErrInternalServer        = errors.New("internal server error")
+	ErrInvalidRefreshToken   = errors.New("invalid refresh token")
+	ErrInvalidResetToken     = errors.New("invalid or expired reset token")
+	ErrInvalidVerifyToken    = errors.New("invalid or expired verification token")
 )

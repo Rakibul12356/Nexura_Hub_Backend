@@ -1,4 +1,3 @@
-// internal/modules/chat/models.go
 package chat
 
 import (
@@ -15,6 +14,26 @@ const (
 	ChatGroup  ChatType = "group"
 )
 
+type Member struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Avatar   *string   `json:"avatar"`
+	Role     string    `json:"role"`
+	IsOnline bool      `json:"isOnline"`
+}
+
+type ReplyTo struct {
+	ID         uuid.UUID `json:"id"`
+	SenderName string    `json:"senderName"`
+	Content    string    `json:"content"`
+}
+
+type Attachment struct {
+	Type string `json:"type"`
+	URL  string `json:"url"`
+	Name string `json:"name"`
+}
+
 type EmojiReaction struct {
 	Emoji string   `json:"emoji"`
 	Count int      `json:"count"`
@@ -27,10 +46,14 @@ type Conversation struct {
 	Name         string       `json:"name"`
 	Avatar       *string      `json:"avatar"`
 	CourseID     *uuid.UUID   `json:"courseId"`
+	CourseTitle  string       `json:"courseTitle,omitempty"`
 	InstructorID *uuid.UUID   `json:"instructorId"`
+	Members      []Member     `json:"members"`
 	LastMessage  *ChatMessage `json:"lastMessage,omitempty"`
-	CreatedAt    time.Time    `json:"createdAt"`
-	UpdatedAt    time.Time    `json:"updatedAt"`
+	UnreadCount  int          `json:"unreadCount"`
+	UpdatedAt    string       `json:"updatedAt"`
+	CreatedAt    time.Time    `json:"-"`
+	UpdatedAtRaw time.Time    `json:"-"`
 }
 
 type ChatMessage struct {
@@ -40,17 +63,20 @@ type ChatMessage struct {
 	SenderName     string          `json:"senderName,omitempty"`
 	SenderAvatar   *string         `json:"senderAvatar,omitempty"`
 	SenderRole     auth.UserRole   `json:"senderRole,omitempty"`
-	Content        *string         `json:"content"`
-	ImageURL       *string         `json:"imageUrl"`
-	ReplyToID      *uuid.UUID      `json:"replyToId"`
-	Reactions      []EmojiReaction `json:"reactions"`
+	Content        string          `json:"content"`
 	Timestamp      string          `json:"timestamp"`
-	CreatedAt      time.Time       `json:"createdAt"`
+	IsRead         bool            `json:"isRead"`
+	ImageURL       *string         `json:"imageUrl"`
+	ReplyTo        *ReplyTo        `json:"replyTo,omitempty"`
+	Attachment     *Attachment     `json:"attachment,omitempty"`
+	Reactions      []EmojiReaction `json:"reactions"`
+	ReplyToID      *uuid.UUID      `json:"-"`
+	CreatedAt      time.Time       `json:"createdAt,omitempty"`
 }
 
 type SendMessageDTO struct {
 	ConversationID uuid.UUID  `json:"conversationId"`
-	Content        *string    `json:"content"`
+	Content        string     `json:"content"`
 	ImageURL       *string    `json:"imageUrl"`
 	ReplyToID      *uuid.UUID `json:"replyToId"`
 }
@@ -59,4 +85,5 @@ type SendReactionDTO struct {
 	ConversationID uuid.UUID `json:"conversationId"`
 	MessageID      uuid.UUID `json:"messageId"`
 	Emoji          string    `json:"emoji"`
+	UserID         uuid.UUID `json:"userId"`
 }

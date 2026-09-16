@@ -1,4 +1,3 @@
-// internal/modules/instructor/repository.go
 package instructor
 
 import (
@@ -21,55 +20,10 @@ func NewInstructorRepository(db *sql.DB) InstructorRepository {
 }
 
 func (r *postgresInstructorRepository) GetInstructorStats(ctx context.Context, instructorID uuid.UUID) (*InstructorStats, error) {
-	earningsQuery := `
-		SELECT COALESCE(SUM(instructor_earnings), 0.00)
-		FROM transactions
-		WHERE instructor_id = $1 AND status = 'completed'
-	`
-	var totalEarnings float64
-	_ = r.db.QueryRowContext(ctx, earningsQuery, instructorID).Scan(&totalEarnings)
-
-	studentsQuery := `
-		SELECT COUNT(DISTINCT student_id)
-		FROM enrollments e
-		JOIN courses c ON e.course_id = c.id
-		WHERE c.instructor_id = $1 AND c.deleted_at IS NULL
-	`
-	var activeStudents int
-	_ = r.db.QueryRowContext(ctx, studentsQuery, instructorID).Scan(&activeStudents)
-
-	coursesQuery := `SELECT COUNT(*) FROM courses WHERE instructor_id = $1 AND deleted_at IS NULL`
-	var totalCourses int
-	_ = r.db.QueryRowContext(ctx, coursesQuery, instructorID).Scan(&totalCourses)
-
-	recentQuery := `
-		SELECT u.first_name || ' ' || u.last_name AS student_name, c.title, t.gross_amount, t.instructor_earnings, t.created_at
-		FROM transactions t
-		JOIN users u ON t.student_id = u.id
-		JOIN courses c ON t.course_id = c.id
-		WHERE t.instructor_id = $1
-		ORDER BY t.created_at DESC
-		LIMIT 5
-	`
-	rows, err := r.db.QueryContext(ctx, recentQuery, instructorID)
-	var recent []RecentEnrollment
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var rec RecentEnrollment
-			if err := rows.Scan(&rec.StudentName, &rec.CourseTitle, &rec.Price, &rec.InstructorNet, &rec.Date); err == nil {
-				recent = append(recent, rec)
-			}
-		}
-	}
-	if recent == nil {
-		recent = []RecentEnrollment{}
-	}
-
-	return &InstructorStats{
-		TotalEarnings:     totalEarnings,
-		ActiveStudents:    activeStudents,
-		TotalCourses:      totalCourses,
-		RecentEnrollments: recent,
-	}, nil
+	s := &InstructorStats{}
+	_ = r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM courses WHERE instructor_id=$1 AND deleted_at IS NULL`, instructorID).Scan(&s.TotalCourses)
+	_ = r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM enrollments e JOIN courses c ON c.id=e.course_id WHERE c.instructor_id=$1`, instructorID).Scan(&s.TotalEnrollments)
+	_ = r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(price),0), COALESCE(SUM(instructor_earnings),0) FROM transactions WHERE instructor_id=$1 AND status='completed'`, instructorID).Scan(&s.TotalRevenue, &s.InstructorEarnings)
+	_ = r.db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT e.user_id) FROM enrollments e JOIN courses c ON c.id=e.course_id WHERE c.instructor_id=$1`, instructorID).Scan(&s.TotalStudents)
+	return s, nil
 }

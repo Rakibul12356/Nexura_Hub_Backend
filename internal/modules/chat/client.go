@@ -141,9 +141,13 @@ func (c *Client) handleIncomingEvent(raw []byte) {
 			if err != nil {
 				return
 			}
+			content := ""
+			if req.Message.Content != nil {
+				content = *req.Message.Content
+			}
 			msg, err := c.ChatUsecase.SendMessage(ctx, c.UserID, SendMessageDTO{
 				ConversationID: convID,
-				Content:        req.Message.Content,
+				Content:        content,
 				ImageURL:       req.Message.ImageURL,
 			})
 			if err == nil {
@@ -201,7 +205,7 @@ func (c *Client) handleIncomingEvent(raw []byte) {
 		}
 		if err := json.Unmarshal(event.Data, &req); err == nil {
 			broadcastPayload, _ := json.Marshal(map[string]interface{}{
-				"event": "typing_status",
+				"event": "user_typing",
 				"data":  req,
 			})
 			c.Hub.BroadcastToRoom(req.ConversationID, broadcastPayload)
