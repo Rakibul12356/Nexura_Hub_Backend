@@ -14,6 +14,7 @@ func RepairCompat(db *sql.DB) {
 	}
 	repairCategoriesToUUID(db)
 	repairLearningPointsArray(db)
+	repairWalletsUnique(db)
 }
 
 func columnUDT(db *sql.DB, table, column string) string {
@@ -106,6 +107,12 @@ func repairLearningPointsArray(db *sql.DB) {
 	execLog(db, "drop learning_points jsonb", `ALTER TABLE courses DROP COLUMN IF EXISTS learning_points`)
 	execLog(db, "rename learning_points_arr", `ALTER TABLE courses RENAME COLUMN learning_points_arr TO learning_points`)
 	execLog(db, "learning_points default", `ALTER TABLE courses ALTER COLUMN learning_points SET DEFAULT '{}'`)
+}
+
+func repairWalletsUnique(db *sql.DB) {
+	execLog(db, "wallets unique (owner_type, user_id)", `
+		CREATE UNIQUE INDEX IF NOT EXISTS wallets_owner_type_user_id_key
+		ON wallets (owner_type, user_id)`)
 }
 
 func pqQuoteIdent(name string) string {

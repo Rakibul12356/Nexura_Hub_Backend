@@ -431,29 +431,41 @@ func (r *postgresRepo) ValidateCoupon(ctx context.Context, code, courseRef strin
 }
 
 func (r *postgresRepo) GetWallet(ctx context.Context, ownerType string, userID uuid.UUID) (*WalletView, error) {
+	empty := &WalletView{OwnerType: ownerType, Balance: 0, Currency: "BDT", IsDummy: true, LifetimeCredits: 0, Recent: []WalletLedger{}}
 	uid := userID
 	if ownerType == "admin" {
-		_ = r.db.QueryRowContext(ctx, `SELECT id FROM users WHERE role='admin' AND deleted_at IS NULL ORDER BY created_at LIMIT 1`).Scan(&uid)
+		if err := r.db.QueryRowContext(ctx, `SELECT id FROM users WHERE role='admin' AND deleted_at IS NULL ORDER BY created_at LIMIT 1`).Scan(&uid); err != nil {
+			return empty, nil
+		}
 	}
-	_, _ = r.db.ExecContext(ctx, `INSERT INTO wallets (id, owner_type, user_id, balance) VALUES ($1,$2,$3,0) ON CONFLICT (owner_type, user_id) DO NOTHING`, uuid.New(), ownerType, uid)
+	if uid == uuid.Nil {
+		return empty, nil
+	}
+	_, _ = r.db.ExecContext(ctx, `
+		INSERT INTO wallets (id, owner_type, user_id, balance)
+		SELECT $1, $2, $3, 0
+		WHERE NOT EXISTS (
+			SELECT 1 FROM wallets WHERE owner_type::text = $2 AND user_id = $3
+		)
+	`, uuid.New(), ownerType, uid)
 	var walletID uuid.UUID
 	var bal float64
-	err := r.db.QueryRowContext(ctx, `SELECT id, balance FROM wallets WHERE owner_type=$1 AND user_id=$2`, ownerType, uid).Scan(&walletID, &bal)
+	err := r.db.QueryRowContext(ctx, `SELECT id, balance FROM wallets WHERE owner_type::text=$1 AND user_id=$2`, ownerType, uid).Scan(&walletID, &bal)
 	if err != nil {
-		return nil, err
+		return empty, nil
 	}
 	var life float64
-	_ = r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(amount),0) FROM wallet_ledger WHERE wallet_id=$1 AND entry_type='credit'`, walletID).Scan(&life)
-	rows, err := r.db.QueryContext(ctx, `SELECT id, entry_type, amount, balance_after, COALESCE(note,''), created_at FROM wallet_ledger WHERE wallet_id=$1 ORDER BY created_at DESC LIMIT 20`, walletID)
+	_ = r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(amount),0) FROM wallet_ledger WHERE wallet_id=$1 AND entry_type::text='credit'`, walletID).Scan(&life)
+	rows, err := r.db.QueryContext(ctx, `SELECT id, entry_type::text, amount, balance_after, COALESCE(note,''), created_at FROM wallet_ledger WHERE wallet_id=$1 ORDER BY created_at DESC LIMIT 20`, walletID)
 	if err != nil {
-		return nil, err
+		return &WalletView{OwnerType: ownerType, Balance: bal, Currency: "BDT", IsDummy: true, LifetimeCredits: life, Recent: []WalletLedger{}}, nil
 	}
 	defer rows.Close()
 	recent := []WalletLedger{}
 	for rows.Next() {
 		var l WalletLedger
 		if err := rows.Scan(&l.ID, &l.EntryType, &l.Amount, &l.BalanceAfter, &l.Note, &l.CreatedAt); err != nil {
-			return nil, err
+			continue
 		}
 		recent = append(recent, l)
 	}

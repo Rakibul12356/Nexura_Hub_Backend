@@ -15,14 +15,10 @@ import (
 	"nexura-backend/pkg/utils"
 )
 
-const learningPointsExpr = `COALESCE(
-	CASE
-		WHEN pg_typeof(c.learning_points)::text IN ('jsonb','json')
-			THEN ARRAY(SELECT jsonb_array_elements_text(COALESCE(c.learning_points::jsonb, '[]'::jsonb)))
-		ELSE c.learning_points::text[]
-	END,
-	'{}'::text[]
-)`
+// learning_points is TEXT[] (RepairCompat converts leftover jsonb at boot).
+// Never use learning_points::jsonb — Postgres type-checks the cast against the
+// real column type and 500s with: cannot cast type text[] to jsonb (42846).
+const learningPointsExpr = `COALESCE(c.learning_points, '{}'::text[])`
 
 func parseOptionalUUID(raw sql.NullString) *uuid.UUID {
 	if !raw.Valid {

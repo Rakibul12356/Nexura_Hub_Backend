@@ -78,12 +78,8 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		return
 	}
 	user, err := h.authUsecase.GetProfile(c.Request.Context(), userID)
-	if err != nil {
-		if errors.Is(err, appErrors.ErrUserNotFound) {
-			response.NotFound(c, err.Error())
-			return
-		}
-		response.Internal(c, err)
+	if err != nil || user == nil {
+		response.Unauthorized(c, "Unauthorized")
 		return
 	}
 	response.Success(c, http.StatusOK, "OK", user)
