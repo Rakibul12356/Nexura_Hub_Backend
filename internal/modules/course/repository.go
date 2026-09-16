@@ -15,6 +15,26 @@ import (
 	"nexura-backend/pkg/utils"
 )
 
+const learningPointsExpr = `COALESCE(
+	CASE
+		WHEN pg_typeof(c.learning_points)::text IN ('jsonb','json')
+			THEN ARRAY(SELECT jsonb_array_elements_text(COALESCE(c.learning_points::jsonb, '[]'::jsonb)))
+		ELSE c.learning_points::text[]
+	END,
+	'{}'::text[]
+)`
+
+func parseOptionalUUID(raw sql.NullString) *uuid.UUID {
+	if !raw.Valid {
+		return nil
+	}
+	id, err := uuid.Parse(strings.TrimSpace(raw.String))
+	if err != nil {
+		return nil
+	}
+	return &id
+}
+
 type CourseRepository interface {
 	ListCourses(ctx context.Context, f ListFilter) ([]Course, int, error)
 	GetByIDOrSlug(ctx context.Context, idOrSlug string) (*Course, error)
@@ -129,7 +149,7 @@ func (r *postgresCourseRepository) ListCourses(ctx context.Context, f ListFilter
 
 	w := "WHERE " + strings.Join(where, " AND ")
 	var total int
-	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id `+w, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM courses c LEFT JOIN categories cat ON c.category_id::text = cat.id::text `+w, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
@@ -146,9 +166,9 @@ func (r *postgresCourseRepository) ListCourses(ctx context.Context, f ListFilter
 	}
 
 	query := fmt.Sprintf(`
-		SELECT c.id, c.slug, c.title, c.subtitle, c.description, c.category_id, COALESCE(cat.title,''),
+		SELECT c.id, c.slug, c.title, c.subtitle, c.description, c.category_id::text, COALESCE(cat.title,''),
 		       c.instructor_id, c.creator_type, COALESCE(c.thumbnail,''), c.price, c.discount_price,
-		       c.is_published, c.is_featured, COALESCE(c.learning_points, '{}'),
+		       c.is_published, c.is_featured, %s,
 		       c.created_at, c.updated_at,
 		       u.first_name, u.last_name, u.avatar, u.designation, u.bio, u.role,
 		       (SELECT COUNT(*) FROM modules m WHERE m.course_id = c.id),
@@ -156,12 +176,12 @@ func (r *postgresCourseRepository) ListCourses(ctx context.Context, f ListFilter
 		       COALESCE((SELECT SUM(t.price) FROM transactions t WHERE t.course_id = c.id AND t.status='completed'),0),
 		       COALESCE((SELECT SUM(t.admin_commission_amount) FROM transactions t WHERE t.course_id = c.id AND t.status='completed'),0)
 		FROM courses c
-		LEFT JOIN categories cat ON c.category_id = cat.id
+		LEFT JOIN categories cat ON c.category_id::text = cat.id::text
 		JOIN users u ON u.id = c.instructor_id
 		%s
 		ORDER BY %s
 		LIMIT $%d OFFSET $%d
-	`, w, order, i, i+1)
+	`, learningPointsExpr, w, order, i, i+1)
 	args = append(args, f.Limit, utils.Offset(f.Page, f.Limit))
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -186,13 +206,13 @@ func (r *postgresCourseRepository) ListCourses(ctx context.Context, f ListFilter
 
 func scanCourseListRow(rows *sql.Rows) (*Course, error) {
 	var c Course
-	var catID *uuid.UUID
+	var catRaw sql.NullString
 	var first, last string
 	var avatar, designation, bio *string
 	var role string
 	var points pq.StringArray
 	err := rows.Scan(
-		&c.ID, &c.Slug, &c.Title, &c.Subtitle, &c.Description, &catID, &c.Category,
+		&c.ID, &c.Slug, &c.Title, &c.Subtitle, &c.Description, &catRaw, &c.Category,
 		&c.InstructorID, &c.CreatorType, &c.Thumbnail, &c.Price, &c.DiscountPrice,
 		&c.IsPublished, &c.IsFeatured, &points, &c.CreatedAt, &c.UpdatedAt,
 		&first, &last, &avatar, &designation, &bio, &role,
@@ -201,7 +221,7 @@ func scanCourseListRow(rows *sql.Rows) (*Course, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.CategoryID = catID
+	c.CategoryID = parseOptionalUUID(catRaw)
 	c.Image = c.Thumbnail
 	c.LearningPoints = []string(points)
 	if c.LearningPoints == nil {
@@ -224,23 +244,23 @@ func (r *postgresCourseRepository) GetByID(ctx context.Context, id uuid.UUID) (*
 
 func (r *postgresCourseRepository) GetByIDOrSlug(ctx context.Context, idOrSlug string) (*Course, error) {
 	query := `
-		SELECT c.id, c.slug, c.title, c.subtitle, c.description, c.category_id, COALESCE(cat.title,''),
+		SELECT c.id, c.slug, c.title, c.subtitle, c.description, c.category_id::text, COALESCE(cat.title,''),
 		       c.instructor_id, c.creator_type, COALESCE(c.thumbnail,''), c.price, c.discount_price,
-		       c.is_published, c.is_featured, COALESCE(c.learning_points, '{}'),
+		       c.is_published, c.is_featured, ` + learningPointsExpr + `,
 		       c.created_at, c.updated_at,
 		       u.first_name, u.last_name, u.avatar, u.designation, u.bio, u.role
 		FROM courses c
-		LEFT JOIN categories cat ON c.category_id = cat.id
+		LEFT JOIN categories cat ON c.category_id::text = cat.id::text
 		JOIN users u ON u.id = c.instructor_id
 		WHERE c.deleted_at IS NULL AND (c.id::text = $1 OR c.slug = $1)
 	`
 	var c Course
-	var catID *uuid.UUID
+	var catRaw sql.NullString
 	var first, last, role string
 	var avatar, designation, bio *string
 	var points pq.StringArray
 	err := r.db.QueryRowContext(ctx, query, idOrSlug).Scan(
-		&c.ID, &c.Slug, &c.Title, &c.Subtitle, &c.Description, &catID, &c.Category,
+		&c.ID, &c.Slug, &c.Title, &c.Subtitle, &c.Description, &catRaw, &c.Category,
 		&c.InstructorID, &c.CreatorType, &c.Thumbnail, &c.Price, &c.DiscountPrice,
 		&c.IsPublished, &c.IsFeatured, &points, &c.CreatedAt, &c.UpdatedAt,
 		&first, &last, &avatar, &designation, &bio, &role,
@@ -251,7 +271,7 @@ func (r *postgresCourseRepository) GetByIDOrSlug(ctx context.Context, idOrSlug s
 		}
 		return nil, err
 	}
-	c.CategoryID = catID
+	c.CategoryID = parseOptionalUUID(catRaw)
 	c.Image = c.Thumbnail
 	c.LearningPoints = []string(points)
 	if c.LearningPoints == nil {
@@ -349,7 +369,7 @@ func (r *postgresCourseRepository) SetFeatured(ctx context.Context, id uuid.UUID
 }
 
 func (r *postgresCourseRepository) GetCategories(ctx context.Context) ([]Category, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id, title, slug, COALESCE(thumbnail,''), created_at FROM categories ORDER BY title`)
+	rows, err := r.db.QueryContext(ctx, `SELECT id::text, title, slug, COALESCE(thumbnail,''), created_at FROM categories ORDER BY title`)
 	if err != nil {
 		return nil, err
 	}
@@ -357,8 +377,12 @@ func (r *postgresCourseRepository) GetCategories(ctx context.Context) ([]Categor
 	var out []Category
 	for rows.Next() {
 		var c Category
-		if err := rows.Scan(&c.ID, &c.Title, &c.Slug, &c.Thumbnail, &c.CreatedAt); err != nil {
+		var idRaw string
+		if err := rows.Scan(&idRaw, &c.Title, &c.Slug, &c.Thumbnail, &c.CreatedAt); err != nil {
 			return nil, err
+		}
+		if id, err := uuid.Parse(idRaw); err == nil {
+			c.ID = id
 		}
 		c.Value, c.Label = c.Slug, c.Title
 		out = append(out, c)
@@ -371,13 +395,19 @@ func (r *postgresCourseRepository) GetCategories(ctx context.Context) ([]Categor
 
 func (r *postgresCourseRepository) GetCategory(ctx context.Context, id uuid.UUID) (*Category, error) {
 	var c Category
-	err := r.db.QueryRowContext(ctx, `SELECT id, title, slug, COALESCE(thumbnail,''), created_at FROM categories WHERE id=$1`, id).
-		Scan(&c.ID, &c.Title, &c.Slug, &c.Thumbnail, &c.CreatedAt)
+	var idRaw string
+	err := r.db.QueryRowContext(ctx, `SELECT id::text, title, slug, COALESCE(thumbnail,''), created_at FROM categories WHERE id::text=$1`, id.String()).
+		Scan(&idRaw, &c.Title, &c.Slug, &c.Thumbnail, &c.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, appErrors.ErrCategoryNotFound
 	}
 	if err != nil {
 		return nil, err
+	}
+	if parsed, err := uuid.Parse(idRaw); err == nil {
+		c.ID = parsed
+	} else {
+		c.ID = id
 	}
 	c.Value, c.Label = c.Slug, c.Title
 	return &c, nil

@@ -29,7 +29,7 @@ func (h *Handler) List(c *gin.Context) {
 	userID, _ := middleware.CurrentUserID(c)
 	rows, err := h.db.QueryContext(c, `SELECT id, type, title, message, is_read, link, created_at FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50`, userID)
 	if err != nil {
-		response.Internal(c, err)
+		response.Success(c, http.StatusOK, "OK", []Item{})
 		return
 	}
 	defer rows.Close()

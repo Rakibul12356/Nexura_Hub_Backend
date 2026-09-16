@@ -90,5 +90,10 @@ func (s *JWTService) parse(tokenString string, secret []byte) (*JWTClaims, error
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token")
 	}
+	if claims.UserID == uuid.Nil && claims.Subject != "" {
+		if id, err := uuid.Parse(claims.Subject); err == nil {
+			claims.UserID = id
+		}
+	}
 	return claims, nil
 }

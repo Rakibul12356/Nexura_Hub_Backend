@@ -27,9 +27,10 @@ func ApplySchema(db *sql.DB, path string) {
 	}
 	if failed == 0 {
 		log.Println("[Database] Schema migration applied.")
-		return
+	} else {
+		log.Printf("[Database] Schema migration finished with %d warning(s).", failed)
 	}
-	log.Printf("[Database] Schema migration finished with %d warning(s).", failed)
+	RepairCompat(db)
 }
 
 func splitSQL(src string) []string {
