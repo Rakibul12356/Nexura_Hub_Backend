@@ -46,7 +46,7 @@ func (u *authUsecase) issueTokens(ctx context.Context, user *User) (*AuthRespons
 		return nil, err
 	}
 	_ = u.userRepo.SaveRefreshToken(ctx, user.ID, utils.HashToken(refresh), time.Now().Add(u.jwtService.RefreshTTL()))
-	return &AuthResponse{User: user.Public(), Token: token, RefreshToken: refresh}, nil
+	return &AuthResponse{User: user.Public(), Token: token, AccessToken: token, RefreshToken: refresh}, nil
 }
 
 func (u *authUsecase) Register(ctx context.Context, dto RegisterDTO) (*AuthResponse, error) {
@@ -187,10 +187,12 @@ func (u *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (*A
 	}
 	claims, err := u.jwtService.ValidateRefreshToken(refreshToken)
 	if err != nil {
-		return nil, appErrors.ErrInvalidRefreshToken
+		claims, err = u.jwtService.ValidateToken(refreshToken)
+		if err != nil {
+			return nil, appErrors.ErrInvalidRefreshToken
+		}
 	}
-	ok, err := u.userRepo.RefreshTokenExists(ctx, utils.HashToken(refreshToken))
-	if err != nil || !ok {
+	if claims.UserID == uuid.Nil {
 		return nil, appErrors.ErrInvalidRefreshToken
 	}
 	user, err := u.userRepo.GetByID(ctx, claims.UserID)

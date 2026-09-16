@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -70,6 +71,7 @@ type LoginDTO struct {
 type AuthResponse struct {
 	User         *User  `json:"user"`
 	Token        string `json:"token"`
+	AccessToken  string `json:"accessToken,omitempty"`
 	RefreshToken string `json:"refreshToken"`
 }
 
@@ -96,7 +98,15 @@ type ChangePasswordDTO struct {
 }
 
 type RefreshTokenDTO struct {
-	RefreshToken string `json:"refreshToken"`
+	RefreshToken     string `json:"refreshToken"`
+	RefreshTokenAlt  string `json:"refresh_token"`
+}
+
+func (d RefreshTokenDTO) Token() string {
+	if strings.TrimSpace(d.RefreshToken) != "" {
+		return strings.TrimSpace(d.RefreshToken)
+	}
+	return strings.TrimSpace(d.RefreshTokenAlt)
 }
 
 type ForgotPasswordDTO struct {

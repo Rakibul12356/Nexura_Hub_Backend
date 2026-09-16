@@ -67,7 +67,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	userID, _ := middleware.CurrentUserID(c)
 	var dto RefreshTokenDTO
 	_ = c.ShouldBindJSON(&dto)
-	_ = h.authUsecase.Logout(c.Request.Context(), userID, dto.RefreshToken)
+	_ = h.authUsecase.Logout(c.Request.Context(), userID, dto.Token())
 	response.Success(c, http.StatusOK, "Logged out successfully", gin.H{"message": "Logged out successfully"})
 }
 
@@ -78,7 +78,15 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		return
 	}
 	user, err := h.authUsecase.GetProfile(c.Request.Context(), userID)
-	if err != nil || user == nil {
+	if err != nil {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
+			response.Unauthorized(c, "Unauthorized")
+			return
+		}
+		response.Internal(c, err)
+		return
+	}
+	if user == nil {
 		response.Unauthorized(c, "Unauthorized")
 		return
 	}
@@ -132,13 +140,18 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		response.BindError(c, err)
 		return
 	}
-	res, err := h.authUsecase.RefreshToken(c.Request.Context(), dto.RefreshToken)
+	res, err := h.authUsecase.RefreshToken(c.Request.Context(), dto.Token())
 	if err != nil {
-		response.Unauthorized(c, "Invalid refresh token")
+		if errors.Is(err, appErrors.ErrUserNotFound) || errors.Is(err, appErrors.ErrInvalidRefreshToken) {
+			response.Unauthorized(c, "Invalid refresh token")
+			return
+		}
+		response.Internal(c, err)
 		return
 	}
 	response.Success(c, http.StatusOK, "OK", gin.H{
 		"token":        res.Token,
+		"accessToken":  res.Token,
 		"refreshToken": res.RefreshToken,
 		"user":         res.User,
 	})
