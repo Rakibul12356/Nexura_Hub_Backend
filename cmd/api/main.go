@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -26,6 +25,9 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
+	if strings.EqualFold(cfg.Environment, "production") {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	log.Printf("[Nexura Hub] Starting backend service on port %s (env: %s)...", cfg.Port, cfg.Environment)
 
 	db, err := database.NewPostgresDB(cfg.DBUrl)
@@ -34,13 +36,7 @@ func main() {
 	} else {
 		defer db.Close()
 		log.Println("[Database] PostgreSQL connection pool established.")
-		if sqlBytes, err := os.ReadFile("db/migrations/000001_init_schema.up.sql"); err == nil {
-			if _, err := db.Exec(string(sqlBytes)); err != nil {
-				log.Printf("[WARNING] Auto-migration: %v", err)
-			} else {
-				log.Println("[Database] Schema migration applied.")
-			}
-		}
+		database.ApplySchema(db, "db/migrations/000001_init_schema.up.sql")
 	}
 
 	accessTTL := parseDuration(cfg.JWTAccessExpires, 7*24*time.Hour)

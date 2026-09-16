@@ -27,6 +27,23 @@ func viewerFrom(c *gin.Context) Viewer {
 	return Viewer{UserID: id, Role: middleware.CurrentRole(c)}
 }
 
+func parseUUIDParam(c *gin.Context, names ...string) (uuid.UUID, error) {
+	var last error
+	for _, name := range names {
+		if v := c.Param(name); v != "" {
+			id, err := uuid.Parse(v)
+			if err == nil {
+				return id, nil
+			}
+			last = err
+		}
+	}
+	if last != nil {
+		return uuid.Nil, last
+	}
+	return uuid.Nil, errors.New("missing id")
+}
+
 func (h *CourseHandler) ListCourses(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
@@ -266,7 +283,7 @@ func (h *CourseHandler) AddModule(c *gin.Context) {
 }
 
 func (h *CourseHandler) ListModules(c *gin.Context) {
-	courseID, err := uuid.Parse(c.Param("courseId"))
+	courseID, err := parseUUIDParam(c, "id", "courseId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid course ID", "VALIDATION_ERROR", nil)
 		return
@@ -335,7 +352,7 @@ func (h *CourseHandler) DeleteModule(c *gin.Context) {
 }
 
 func (h *CourseHandler) ReorderModules(c *gin.Context) {
-	courseID, err := uuid.Parse(c.Param("courseId"))
+	courseID, err := parseUUIDParam(c, "id", "courseId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid course ID", "VALIDATION_ERROR", nil)
 		return
@@ -427,7 +444,7 @@ func (h *CourseHandler) DeleteLesson(c *gin.Context) {
 }
 
 func (h *CourseHandler) ReorderLessons(c *gin.Context) {
-	moduleID, err := uuid.Parse(c.Param("moduleId"))
+	moduleID, err := parseUUIDParam(c, "id", "moduleId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid module ID", "VALIDATION_ERROR", nil)
 		return
@@ -445,7 +462,7 @@ func (h *CourseHandler) ReorderLessons(c *gin.Context) {
 }
 
 func (h *CourseHandler) AddResource(c *gin.Context) {
-	lessonID, err := uuid.Parse(c.Param("lessonId"))
+	lessonID, err := parseUUIDParam(c, "id", "lessonId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid lesson ID", "VALIDATION_ERROR", nil)
 		return
@@ -464,7 +481,7 @@ func (h *CourseHandler) AddResource(c *gin.Context) {
 }
 
 func (h *CourseHandler) DeleteResource(c *gin.Context) {
-	lessonID, err := uuid.Parse(c.Param("lessonId"))
+	lessonID, err := parseUUIDParam(c, "id", "lessonId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid lesson ID", "VALIDATION_ERROR", nil)
 		return
@@ -538,7 +555,7 @@ func (h *CourseHandler) DeleteReview(c *gin.Context) {
 }
 
 func (h *CourseHandler) GetNotes(c *gin.Context) {
-	lessonID, err := uuid.Parse(c.Param("lessonId"))
+	lessonID, err := parseUUIDParam(c, "id", "lessonId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid lesson ID", "VALIDATION_ERROR", nil)
 		return
@@ -552,7 +569,7 @@ func (h *CourseHandler) GetNotes(c *gin.Context) {
 }
 
 func (h *CourseHandler) AddNote(c *gin.Context) {
-	lessonID, err := uuid.Parse(c.Param("lessonId"))
+	lessonID, err := parseUUIDParam(c, "id", "lessonId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid lesson ID", "VALIDATION_ERROR", nil)
 		return
@@ -571,7 +588,7 @@ func (h *CourseHandler) AddNote(c *gin.Context) {
 }
 
 func (h *CourseHandler) DeleteNote(c *gin.Context) {
-	lessonID, err := uuid.Parse(c.Param("lessonId"))
+	lessonID, err := parseUUIDParam(c, "id", "lessonId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid lesson ID", "VALIDATION_ERROR", nil)
 		return
@@ -589,7 +606,7 @@ func (h *CourseHandler) DeleteNote(c *gin.Context) {
 }
 
 func (h *CourseHandler) GetDiscussions(c *gin.Context) {
-	lessonID, err := uuid.Parse(c.Param("lessonId"))
+	lessonID, err := parseUUIDParam(c, "id", "lessonId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid lesson ID", "VALIDATION_ERROR", nil)
 		return
@@ -603,7 +620,7 @@ func (h *CourseHandler) GetDiscussions(c *gin.Context) {
 }
 
 func (h *CourseHandler) AddDiscussion(c *gin.Context) {
-	lessonID, err := uuid.Parse(c.Param("lessonId"))
+	lessonID, err := parseUUIDParam(c, "id", "lessonId")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid lesson ID", "VALIDATION_ERROR", nil)
 		return

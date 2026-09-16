@@ -232,10 +232,8 @@ CREATE TABLE IF NOT EXISTS enrollments (
   completed_at    TIMESTAMPTZ,
   UNIQUE (user_id, course_id)
 );
-CREATE INDEX IF NOT EXISTS idx_enrollments_course ON enrollments(course_id);
-CREATE INDEX IF NOT EXISTS idx_enrollments_user ON enrollments(user_id);
 
--- Compat: older schema used student_id
+-- Compat: older schema used student_id — rename BEFORE indexes that reference user_id
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='enrollments' AND column_name='student_id')
@@ -247,6 +245,9 @@ BEGIN
     ALTER TABLE enrollments RENAME COLUMN progress_percentage TO progress;
   END IF;
 END $$;
+
+CREATE INDEX IF NOT EXISTS idx_enrollments_course ON enrollments(course_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_user ON enrollments(user_id);
 
 ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS payment_id UUID REFERENCES payments(id);
 ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS payment_status payment_status DEFAULT 'paid';
@@ -442,6 +443,15 @@ CREATE TABLE IF NOT EXISTS conversation_members (
 ALTER TABLE conversation_members ADD COLUMN IF NOT EXISTS unread_count INT NOT NULL DEFAULT 0;
 ALTER TABLE conversation_members ADD COLUMN IF NOT EXISTS last_read_at TIMESTAMPTZ;
 
+-- Compat: older schema used chat_messages — rename BEFORE creating messages
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'chat_messages')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'messages') THEN
+    ALTER TABLE chat_messages RENAME TO messages;
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS messages (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
@@ -456,15 +466,6 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, created_at);
-
--- Compat view for old chat_messages name
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'chat_messages')
-     AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'messages') THEN
-    ALTER TABLE chat_messages RENAME TO messages;
-  END IF;
-END $$;
 
 CREATE TABLE IF NOT EXISTS message_reactions (
   message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,

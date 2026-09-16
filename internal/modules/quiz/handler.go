@@ -101,11 +101,15 @@ func (h *Handler) Create(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "Quiz set created", gin.H{"id": id, "title": dto.Title, "questions": []any{}})
 }
 
-func (h *Handler) Get(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("quizId"))
-	if err != nil {
-		id, err = uuid.Parse(c.Param("id"))
+func parseQuizID(c *gin.Context) (uuid.UUID, error) {
+	if id, err := uuid.Parse(c.Param("id")); err == nil {
+		return id, nil
 	}
+	return uuid.Parse(c.Param("quizId"))
+}
+
+func (h *Handler) Get(c *gin.Context) {
+	id, err := parseQuizID(c)
 	if err != nil {
 		response.BindError(c, err)
 		return
@@ -124,10 +128,7 @@ func (h *Handler) Get(c *gin.Context) {
 }
 
 func (h *Handler) Update(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("quizId"))
-	if err != nil {
-		id, err = uuid.Parse(c.Param("id"))
-	}
+	id, err := parseQuizID(c)
 	if err != nil {
 		response.BindError(c, err)
 		return
@@ -148,10 +149,7 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 func (h *Handler) Delete(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("quizId"))
-	if err != nil {
-		id, err = uuid.Parse(c.Param("id"))
-	}
+	id, err := parseQuizID(c)
 	if err != nil {
 		response.BindError(c, err)
 		return
@@ -165,10 +163,7 @@ func (h *Handler) Delete(c *gin.Context) {
 }
 
 func (h *Handler) AddQuestion(c *gin.Context) {
-	quizID, err := uuid.Parse(c.Param("quizId"))
-	if err != nil {
-		quizID, err = uuid.Parse(c.Param("id"))
-	}
+	quizID, err := parseQuizID(c)
 	if err != nil {
 		response.BindError(c, err)
 		return
@@ -204,7 +199,7 @@ func (h *Handler) DeleteQuestion(c *gin.Context) {
 		response.BindError(c, err)
 		return
 	}
-	quizID := c.Param("quizId")
+	quizID, _ := parseQuizID(c)
 	_, err = h.db.ExecContext(c, `DELETE FROM quiz_questions WHERE id=$1`, qid)
 	if err != nil {
 		response.Internal(c, err)
@@ -216,7 +211,7 @@ func (h *Handler) DeleteQuestion(c *gin.Context) {
 
 func (h *Handler) Submit(c *gin.Context) {
 	userID, _ := middleware.CurrentUserID(c)
-	quizID, err := uuid.Parse(c.Param("quizId"))
+	quizID, err := parseQuizID(c)
 	if err != nil {
 		response.BindError(c, err)
 		return
