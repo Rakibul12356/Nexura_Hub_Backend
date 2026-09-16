@@ -2,9 +2,22 @@
 
 React 19 + TypeScript frontend-এর জন্য backend contract। Base URL, auth, প্রতিটা endpoint, request/response উদাহরণ এখানে আছে।
 
-**Base URL:** `{VITE_API_URL}` → default `https://nexura-hub-backend.onrender.com/api/v1`  
-**Socket URL:** `{VITE_SOCKET_URL}` → default `https://nexura-hub-backend.onrender.com` (no `/api/v1`)  
-**Local:** `http://localhost:5000/api/v1`
+| | Value |
+|---|---|
+| **Backend host** | `https://nexura-hub-backend.onrender.com` |
+| **API base (`VITE_API_URL`)** | `https://nexura-hub-backend.onrender.com/api/v1` |
+| **Socket / WS (`VITE_SOCKET_URL`)** | `https://nexura-hub-backend.onrender.com` (no `/api/v1`) |
+| **Health** | `GET https://nexura-hub-backend.onrender.com/health` |
+| **Local API** | `http://localhost:5000/api/v1` |
+
+Frontend `.env`:
+
+```
+VITE_API_URL=https://nexura-hub-backend.onrender.com/api/v1
+VITE_SOCKET_URL=https://nexura-hub-backend.onrender.com
+```
+
+Path params এখন সব `:id` (Gin wildcard conflict fix)। `:courseId` / `:moduleId` / `:lessonId` / `:quizId` আর আলাদা route নয়।
 
 Frontend unwrap করে: `response.data.data` আগে, তারপর `response.data`।
 
@@ -330,7 +343,7 @@ Partial: `title, description, thumbnail/image, category, categoryId, price, disc
 
 Optional body: `{ "isPublished": true }`
 
-### `PUT /courses/:courseId/modules/reorder`
+### `PUT /courses/:id/modules/reorder`
 
 ```json
 { "moduleIds": ["uuid1", "uuid2"] }
@@ -342,19 +355,19 @@ Optional body: `{ "isPublished": true }`
 
 | Method | Path | Auth | Body / notes |
 |---|---|---|---|
-| GET | `/courses/:courseId/modules` | Public titles | |
-| GET | `/modules/:moduleId` | Owner / Admin / enrolled | module + lessons |
+| GET | `/courses/:id/modules` | Public titles | |
+| GET | `/modules/:id` | Owner / Admin / enrolled | module + lessons |
 | POST | `/courses/:id/modules` | Owner / Admin | `{ title, description? }` |
 | PUT | `/modules/:id` | Owner / Admin | `{ title, description, isPublished }` |
 | DELETE | `/modules/:id` | Owner / Admin | |
-| PUT | `/modules/:moduleId/lessons/reorder` | Owner / Admin | `{ lessonIds: [] }` |
-| GET | `/lessons/:lessonId` | Enrolled / isFree / owner | |
+| PUT | `/modules/:id/lessons/reorder` | Owner / Admin | `{ lessonIds: [] }` |
+| GET | `/lessons/:id` | Enrolled / isFree / owner | |
 | POST | `/modules/:id/lessons` | Owner / Admin | `{ title, description, videoUrl, duration, isFree, isPublished, quizSetId }` |
 | PUT | `/lessons/:id` | Owner / Admin | same fields |
 | DELETE | `/lessons/:id` | Owner / Admin | |
-| POST | `/lessons/:lessonId/resources` | Owner / Admin | `{ title, type, url, size, fileName, content }` `type`: github\|link\|pdf\|richtext |
-| DELETE | `/lessons/:lessonId/resources/:resourceId` | Owner / Admin | |
-| PATCH | `/lessons/:lessonId/complete` | Enrolled | `{ completed: true }` optional. Alias: `POST /lessons/:id/complete` |
+| POST | `/lessons/:id/resources` | Owner / Admin | `{ title, type, url, size, fileName, content }` `type`: github\|link\|pdf\|richtext |
+| DELETE | `/lessons/:id/resources/:resourceId` | Owner / Admin | |
+| PATCH | `/lessons/:id/complete` | Enrolled | `{ completed: true }` optional. Alias: `POST /lessons/:id/complete` |
 
 Complete response:
 
@@ -371,9 +384,9 @@ Progress = completed published lessons / total published lessons × 100। 100 �
 ### Notes — enrolled, own notes only
 
 ```
-GET    /lessons/:lessonId/notes
-POST   /lessons/:lessonId/notes     { "timestamp": 45, "text": "Review Virtual DOM" }
-DELETE /lessons/:lessonId/notes/:noteId
+GET    /lessons/:id/notes
+POST   /lessons/:id/notes     { "timestamp": 45, "text": "Review Virtual DOM" }
+DELETE /lessons/:id/notes/:noteId
 ```
 
 Note:
@@ -385,8 +398,8 @@ Note:
 ### Discussions
 
 ```
-GET  /lessons/:lessonId/discussions
-POST /lessons/:lessonId/discussions          { "content": "..." }
+GET  /lessons/:id/discussions
+POST /lessons/:id/discussions          { "content": "..." }
 POST /discussions/:id/replies               { "content": "..." }
 POST /discussions/:id/upvote                toggle
 ```
@@ -438,13 +451,13 @@ DELETE /reviews/:id                  Author / Admin
 | Method | Path | Auth |
 |---|---|---|
 | GET | `/quizzes` | Instructor own / Admin |
-| GET | `/quizzes/:quizId` | Owner/Admin; student পায় **without** `isCorrect` |
+| GET | `/quizzes/:id` | Owner/Admin; student পায় **without** `isCorrect` |
 | POST | `/quizzes` | `{ title, description }` → `{ id }` |
-| PUT | `/quizzes/:quizId` | |
-| DELETE | `/quizzes/:quizId` | |
-| POST | `/quizzes/:quizId/questions` | see body below |
-| DELETE | `/quizzes/:quizId/questions/:qId` | |
-| POST | `/quizzes/:quizId/submit` | Enrolled |
+| PUT | `/quizzes/:id` | |
+| DELETE | `/quizzes/:id` | |
+| POST | `/quizzes/:id/questions` | see body below |
+| DELETE | `/quizzes/:id/questions/:qId` | |
+| POST | `/quizzes/:id/submit` | Enrolled |
 
 Question body:
 
@@ -566,7 +579,7 @@ Receipt object (same money fields)।
 
 Paid course এখানে দিলে 422 — dummy pay use করো।
 
-### `GET /enrollments/:courseId/status` — User
+### `GET /enrollments/:id/status` — User (`:id` = course UUID or slug)
 
 ```json
 { "isEnrolled": true, "id": "uuid", "progress": 45, "paymentStatus": "paid" }
@@ -632,7 +645,7 @@ Own courses (admin: all unpublished too).
 }
 ```
 
-Course-specific: `GET /courses/:courseId/enrollments?search=`
+Course-specific: `GET /courses/:id/enrollments?search=`
 
 ### `GET /dashboard/wallet` — Instructor dummy 95% balance
 
@@ -1008,12 +1021,12 @@ GET /instructors/:id/courses     published only
 | `/register` | `POST /auth/register` |
 | `/` Home | `GET /categories`, `GET /courses?isFeatured=true&isPublished=true&limit=8` |
 | `/courses` | `GET /courses`, `GET /categories` |
-| `/courses/:courseId` | `GET /courses/:id`, `GET /enrollments/:courseId/status`, `GET /courses/:id/reviews`, `POST /payments/dummy` |
+| `/courses/:courseId` | `GET /courses/:id`, `GET /enrollments/:id/status`, `GET /courses/:id/reviews`, `POST /payments/dummy` |
 | `/inst-profile` | `GET /instructors/:id`, `GET /courses?instructorId=` |
 | `/account` | `GET /auth/me`, `PUT /auth/profile`, `POST /auth/change-password` |
 | `/account/enrolled-courses` | `GET /user/enrolled-courses` |
 | `/messages` `/dashboard/messages` | Chat REST + Socket.IO |
-| `/player/:slug/:lessonId` | `GET /courses/:slug`, `GET /lessons/:lessonId`, `PATCH .../complete`, quiz submit, notes, discussions, reviews, certificates |
+| `/player/:slug/:lessonId` | `GET /courses/:id`, `GET /lessons/:id`, `PATCH /lessons/:id/complete`, quiz submit, notes, discussions, reviews, certificates |
 | `/dashboard` | `GET /dashboard/stats`, `/dashboard/enrollments?limit=10`, `/dashboard/courses` |
 | `/dashboard/courses/add` | `POST /courses` |
 | `/dashboard/courses/:id` | GET/PUT course, modules, publish, `POST /upload/image` |
@@ -1030,7 +1043,9 @@ GET /instructors/:id/courses     published only
 
 ```ts
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "https://nexura-hub-backend.onrender.com/api/v1",
 });
 
 api.interceptors.request.use((config) => {
